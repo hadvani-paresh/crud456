@@ -1,0 +1,145 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Verify Email";
+}
+
+<div class="row justify-content-center align-items-center animate-fade-in" style="min-height: 70vh;">
+    <div class="col-md-5 col-lg-4">
+        <div class="premium-card p-5">
+            <div class="text-center mb-4 p-4" style="background-color: var(--bs-modal-footer-bg); border-bottom: 1px solid #dee2e6; margin: -3rem -3rem 2.5rem -3rem; border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg);">
+                <div class="bg-success bg-gradient rounded-circle d-inline-flex p-3 mb-3 shadow">
+                    <i class="bi bi-envelope-check text-white fs-2"></i>
+                </div>
+                <h2 class="fw-bold mb-1">Verify Your Email</h2>
+                <p class="text-muted small">Enter the OTP sent to your email</p>
+            </div>
+
+            <div class="alert alert-info border-0 shadow-sm py-3 mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <div>
+                        <strong>Check your email!</strong><br>
+                        <small>We've sent a 6-digit OTP to <strong>@ViewBag.Email</strong></small>
+                    </div>
+                </div>
+            </div>
+
+            <form id="verifyForm" novalidate>
+                <input type="hidden" id="userEmail" value="@ViewBag.Email">
+                
+                <div class="mb-4">
+                    <label class="form-label fw-semibold small">Enter OTP</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="bi bi-key"></i></span>
+                        <input type="text" class="form-control form-control-premium text-center fs-4 fw-bold" 
+                               id="otpCode" placeholder="123456" required maxlength="6" 
+                               style="letter-spacing: 0.5em;">
+                        <div class="invalid-feedback">Please enter the 6-digit OTP.</div>
+                    </div>
+                    <small class="text-muted">OTP expires in 10 minutes</small>
+                </div>
+
+                <div id="verifyError" class="alert alert-danger d-none border-0 shadow-sm py-2 mb-3 small animate-fade-in"></div>
+                <div id="verifySuccess" class="alert alert-success d-none border-0 shadow-sm py-2 mb-3 small animate-fade-in">Email verified successfully! Redirecting to login...</div>
+
+                <button type="submit" class="btn btn-premium w-100 py-3 mb-4">
+                    <span id="verifyBtnText">Verify Email</span>
+                    <span id="verifyBtnLoader" class="spinner-border spinner-border-sm d-none"></span>
+                </button>
+                
+                <div class="text-center pt-3 border-top">
+                    <p class="mb-2 text-muted small">Didn't receive the OTP?</p>
+                    <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="resendOTP()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Resend OTP
+                    </button>
+                    <a href="/Account/Register" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-arrow-left me-1"></i>Back to Register
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-format input to numbers only
+        document.getElementById('otpCode').addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '').substring(0, 6);
+        });
+
+        document.getElementById('verifyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('userEmail').value;
+            const otp = document.getElementById('otpCode');
+            const errorDiv = document.getElementById('verifyError');
+            const successDiv = document.getElementById('verifySuccess');
+            const btnText = document.getElementById('verifyBtnText');
+            const btnLoader = document.getElementById('verifyBtnLoader');
+            
+            errorDiv.classList.add('d-none');
+            successDiv.classList.add('d-none');
+
+            if (!otp.value || otp.value.length !== 6) {
+                errorDiv.innerText = "Please enter a valid 6-digit OTP.";
+                errorDiv.classList.remove('d-none');
+                otp.classList.add('is-invalid');
+                return;
+            }
+
+            otp.classList.remove('is-invalid');
+            btnText.classList.add('d-none');
+            btnLoader.classList.remove('d-none');
+
+            try {
+                const response = await fetch('/api/auth/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        email: email,
+                        otp: otp.value
+                    })
+                });
+
+                if (response.ok) {
+                    successDiv.classList.remove('d-none');
+                    setTimeout(function() {
+                        window.location.href = '/Account/Login';
+                    }, 2000);
+                } else {
+                    const errorData = await response.json();
+                    errorDiv.innerText = errorData.message || "OTP verification failed";
+                    errorDiv.classList.remove('d-none');
+                    btnText.classList.remove('d-none');
+                    btnLoader.classList.add('d-none');
+                }
+            } catch (error) {
+                errorDiv.innerText = "Network error. Please try again.";
+                errorDiv.classList.remove('d-none');
+                btnText.classList.remove('d-none');
+                btnLoader.classList.add('d-none');
+            }
+        });
+
+        async function resendOTP() {
+            const email = document.getElementById('userEmail').value;
+            
+            try {
+                // For now, just show a message. In a real app, you'd implement a resend endpoint
+                alert('Resend functionality would be implemented here. For demo purposes, check the console for the OTP.');
+            } catch (error) {
+                alert('Failed to resend OTP. Please try again.');
+            }
+        }
+
+        // Auto-submit when 6 digits are entered
+        document.getElementById('otpCode').addEventListener('input', function(e) {
+            if (e.target.value.length === 6) {
+                setTimeout(function() {
+                    document.getElementById('verifyForm').dispatchEvent(new Event('submit'));
+                }, 500);
+            }
+        });
+    </script>
+}

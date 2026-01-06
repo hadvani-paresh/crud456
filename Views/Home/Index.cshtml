@@ -1,0 +1,60 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-success">
+                <h2>🎉 Dashboard Loaded Successfully!</h2>
+                <p>Welcome <strong>@User.Identity.Name</strong>!</p>
+                <p>User ID: @User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value</p>
+                <p>Email: @User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
+                <p>Role: @User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</p>
+                <p>Is Authenticated: @User.Identity.IsAuthenticated</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4>🌤️ Weather</h4>
+                </div>
+                <div class="card-body">
+                    <p>Weather feature will be here</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4>💱 Currency</h4>
+                </div>
+                <div class="card-body">
+                    <p>Currency converter will be here</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4>🕐 Time</h4>
+                </div>
+                <div class="card-body">
+                    <p>World clock will be here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    console.log('Dashboard page loaded successfully!');
+    console.log('Current URL:', window.location.href);
+    console.log('JWT Token:', localStorage.getItem('jwt_token'));
+    console.log('User Info:', localStorage.getItem('user_info'));
+</script>

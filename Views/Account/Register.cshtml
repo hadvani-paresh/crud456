@@ -1,0 +1,192 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Create Account";
+}
+
+<div class="row justify-content-center align-items-center animate-fade-in" style="min-height: 70vh;">
+    <div class="col-md-5 col-lg-4">
+        <div class="premium-card p-5">
+            <div class="text-center mb-4 p-4" style="background-color: var(--bs-modal-footer-bg); border-bottom: 1px solid #dee2e6; margin: -3rem -3rem 2.5rem -3rem; border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg);">
+                <div class="bg-primary bg-gradient rounded-circle d-inline-flex p-3 mb-3 shadow">
+                    <i class="bi bi-person-plus text-white fs-2"></i>
+                </div>
+                <h2 class="fw-bold mb-1">Create Account</h2>
+                <p class="text-muted small">Sign up to get started</p>
+            </div>
+
+            <form id="registerForm" novalidate>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="bi bi-envelope"></i></span>
+                        <input type="email" class="form-control form-control-premium" id="regEmail" placeholder="example@gmail.com" required>
+                        <div class="invalid-feedback">Please enter a valid email address.</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="bi bi-key"></i></span>
+                        <input type="password" class="form-control form-control-premium" id="regPassword" placeholder="••••••••" required minlength="6">
+                        <div class="invalid-feedback">Password must be at least 6 characters long.</div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold small">Confirm Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="bi bi-key-fill"></i></span>
+                        <input type="password" class="form-control form-control-premium" id="regConfirmPassword" placeholder="••••••••" required>
+                        <div class="invalid-feedback">Passwords must match.</div>
+                    </div>
+                </div>
+
+                <div id="regError" class="alert alert-danger d-none border-0 shadow-sm py-2 mb-3 small animate-fade-in"></div>
+                <div id="regSuccess" class="alert alert-success d-none border-0 shadow-sm py-2 mb-3 small animate-fade-in">Registration successful! Check your email for OTP.</div>
+
+                <button type="submit" class="btn btn-premium w-100 py-3 mb-4">
+                    <span id="regBtnText">Create Account</span>
+                    <span id="regBtnLoader" class="spinner-border spinner-border-sm d-none"></span>
+                </button>
+                
+                <div class="text-center pt-3 border-top">
+                    <p class="mb-0 text-muted small">Already have an account?</p>
+                    <a href="/Account/Login" class="text-primary fw-bold text-decoration-none">Login</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function isValidEmail(email) {
+            var emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+            return emailRegex.test(email);
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            var form = e.target;
+            var email = document.getElementById('regEmail');
+            var password = document.getElementById('regPassword');
+            var confirmPassword = document.getElementById('regConfirmPassword');
+            var errorDiv = document.getElementById('regError');
+            var successDiv = document.getElementById('regSuccess');
+            var btnText = document.getElementById('regBtnText');
+            var btnLoader = document.getElementById('regBtnLoader');
+            
+            errorDiv.classList.add('d-none');
+            successDiv.classList.add('d-none');
+            form.classList.remove('was-validated');
+
+            var errors = [];
+
+            if (!email.value) {
+                errors.push("Email is required.");
+                email.classList.add('is-invalid');
+            } else if (!isValidEmail(email.value)) {
+                errors.push("Please enter a valid email address.");
+                email.classList.add('is-invalid');
+            } else {
+                email.classList.remove('is-invalid');
+            }
+
+            if (!password.value) {
+                errors.push("Password is required.");
+                password.classList.add('is-invalid');
+            } else if (password.value.length < 6) {
+                errors.push("Password must be at least 6 characters long.");
+                password.classList.add('is-invalid');
+            } else {
+                password.classList.remove('is-invalid');
+            }
+
+            if (!confirmPassword.value) {
+                errors.push("Confirm Password is required.");
+                confirmPassword.classList.add('is-invalid');
+            } else if (password.value !== confirmPassword.value) {
+                errors.push("Password and Confirm Password do not match.");
+                confirmPassword.classList.add('is-invalid');
+            } else {
+                confirmPassword.classList.remove('is-invalid');
+            }
+
+            if (errors.length > 0) {
+                var errorHtml = '<ul class="mb-0 ps-3">';
+                for (var i = 0; i < errors.length; i++) {
+                    errorHtml += '<li>' + errors[i] + '</li>';
+                }
+                errorHtml += '</ul>';
+                errorDiv.innerHTML = errorHtml;
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+
+            btnText.classList.add('d-none');
+            btnLoader.classList.remove('d-none');
+
+            fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    email: email.value, 
+                    password: password.value,
+                    confirmPassword: confirmPassword.value
+                })
+            })
+            .then(function(response) {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(function(errorData) {
+                        throw new Error(errorData.message || "Registration failed");
+                    });
+                }
+            })
+            .then(function(data) {
+                successDiv.classList.remove('d-none');
+                setTimeout(function() {
+                    window.location.href = '/Account/VerifyOTP?email=' + encodeURIComponent(email.value);
+                }, 2000);
+            })
+            .catch(function(error) {
+                errorDiv.innerText = error.message || "Network error. Please try again.";
+                errorDiv.classList.remove('d-none');
+                btnText.classList.remove('d-none');
+                btnLoader.classList.add('d-none');
+            });
+        });
+
+        document.getElementById('registerForm').addEventListener('input', function(e) {
+            if (e.target.id === 'regEmail') {
+                var isValid = e.target.value && isValidEmail(e.target.value);
+                e.target.classList.toggle('is-invalid', !isValid);
+                if (isValid) {
+                    e.target.classList.add('is-valid');
+                } else {
+                    e.target.classList.remove('is-valid');
+                }
+            } else if (e.target.id === 'regPassword') {
+                var isValid = e.target.value && e.target.value.length >= 6;
+                e.target.classList.toggle('is-invalid', !isValid);
+                if (isValid) {
+                    e.target.classList.add('is-valid');
+                } else {
+                    e.target.classList.remove('is-valid');
+                }
+            } else if (e.target.id === 'regConfirmPassword') {
+                var password = document.getElementById('regPassword').value;
+                var isValid = e.target.value && e.target.value === password;
+                e.target.classList.toggle('is-invalid', !isValid);
+                if (isValid) {
+                    e.target.classList.add('is-valid');
+                } else {
+                    e.target.classList.remove('is-valid');
+                }
+            }
+        });
+    </script>
+}

@@ -1,0 +1,419 @@
+@{
+    ViewData["Title"] = "User Management";
+}
+
+<div class="animate-fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="fw-bold mb-0">Users</h1>
+            <p class="text-muted small">Manage your team and their access levels</p>
+        </div>
+        <button class="btn btn-premium px-4 shadow-sm" onclick="openAddModal()">
+            <i class="bi bi-person-plus-fill me-2"></i> Add New User
+        </button>
+    </div>
+
+    <div class="premium-card overflow-hidden">
+        <div class="p-4 bg-white border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">User Directory</h5>
+            <div class="input-group" style="max-width: 300px;">
+                <span class="input-group-text bg-light border-0"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control bg-light border-0 small" id="userSearch" placeholder="Search users..." onkeyup="filterUsers()">
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3 text-uppercase small fw-bold text-muted">ID</th>
+                        <th class="py-3 text-uppercase small fw-bold text-muted">Full Name</th>
+                        <th class="py-3 text-uppercase small fw-bold text-muted">Email</th>
+                        <th class="pe-4 py-3 text-uppercase small fw-bold text-muted text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <!-- Loaded via AJAX -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit User Modal -->
+<div class="modal fade glass-modal" id="userModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: var(--bs-modal-footer-bg); border-bottom: 1px solid #dee2e6; border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg); padding: 1.5rem;">
+                <h4 class="modal-title fw-bold" id="userModalLabel">Add User</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="userForm" novalidate>
+                    <input type="hidden" id="userId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Full Name</label>
+                        <input type="text" class="form-control form-control-premium" id="userName" placeholder="e.g. Paresh Hadvani" required minlength="3">
+                        <div class="invalid-feedback">Full name is required (min 3 chars).</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Email Address</label>
+                        <input type="email" class="form-control form-control-premium" id="userEmail" placeholder="paresh123&#64;gmail.com" required>
+                        <div class="invalid-feedback">Please enter a valid email address.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Password</label>
+                        <input type="password" class="form-control form-control-premium" id="userPassword" placeholder="••••••••" required>
+                        <div class="form-text small text-muted mb-2">Must be at least 6 characters long.</div>
+                        <div class="invalid-feedback">Password must be at least 6 characters long.</div>
+                    </div>
+
+                    <div id="modalError" class="alert alert-danger d-none border-0 shadow-sm py-2 small animate-fade-in"></div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-premium px-4" id="saveBtn" onclick="saveUser()">
+                    <span id="saveBtnText">Save Changes</span>
+                    <span id="saveBtnSpinner" class="spinner-border spinner-border-sm d-none"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade glass-modal" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content text-center p-4">
+            <div class="modal-body">
+                <div class="mb-4">
+                    <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex p-4 mb-4" style="font-size: 2.5rem;">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <h3 class="fw-bold mb-2">Are you sure?</h3>
+                    <p class="text-muted">This action cannot be undone. This user will be permanently removed from the system.</p>
+                </div>
+                <div class="d-flex gap-3 justify-content-center">
+                    <button type="button" class="btn btn-light-premium px-4 flex-grow-1" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger-premium px-4 flex-grow-1" id="confirmDeleteBtn" onclick="executeDelete()">
+                        <span id="deleteBtnText">Delete User</span>
+                        <span id="deleteBtnSpinner" class="spinner-border spinner-border-sm d-none"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let users = [];
+        const userForm = document.getElementById('userForm');
+        const saveBtn = document.getElementById('saveBtn');
+        // Use same validation as Register page for consistency
+        function isValidEmail(email) {
+            var emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+            return emailRegex.test(email);
+        }
+        
+        // Simple password validation - at least 6 characters (same as Register page)
+        function isValidPassword(password) {
+            return password && password.length >= 6;
+        }
+        
+        const passwordRegex = /^.{6,}$/; // At least 6 characters
+        const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+        
+        // Lazy initialize the modal to avoid "bootstrap not defined" or "id not found" issues
+        let _userModal = null;
+        function getModal() {
+            try {
+                if (!_userModal) {
+                    const modalEl = document.getElementById('userModal');
+                    if (!modalEl) {
+                        console.error("Modal element 'userModal' not found!");
+                        alert("Error: Modal element not found. Please refresh the page.");
+                        return null;
+                    }
+                    if (typeof bootstrap === 'undefined') {
+                        console.error("Bootstrap is not loaded!");
+                        alert("Error: Bootstrap JS not loaded. Please check your internet connection.");
+                        return null;
+                    }
+                    _userModal = new bootstrap.Modal(modalEl);
+                }
+                return _userModal;
+            } catch (err) {
+                console.error("Error initializing modal:", err);
+                return null;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("User Management page loaded.");
+            loadUsers();
+        });
+
+        userForm.addEventListener('input', (e) => {
+            const nameEl = document.getElementById('userName');
+            const emailEl = document.getElementById('userEmail');
+            const passwordEl = document.getElementById('userPassword');
+
+            let isNameValid = nameEl.value && nameEl.value.length >= 3;
+            let isEmailValid = emailEl.value && isValidEmail(emailEl.value);
+            let isPasswordValid = passwordEl.value && isValidPassword(passwordEl.value);
+
+            // Apply validation styling (same as Register page)
+            nameEl.classList.toggle('is-invalid', !isNameValid && nameEl.value !== "");
+            emailEl.classList.toggle('is-invalid', !isEmailValid && emailEl.value !== "");
+            passwordEl.classList.toggle('is-invalid', !isPasswordValid && passwordEl.value !== "");
+            
+            if (isNameValid) nameEl.classList.add('is-valid'); else nameEl.classList.remove('is-valid');
+            if (isEmailValid) emailEl.classList.add('is-valid'); else emailEl.classList.remove('is-valid');
+            if (isPasswordValid) passwordEl.classList.add('is-valid'); else passwordEl.classList.remove('is-valid');
+            
+            // Enable/disable save button based on all validations
+            const allValid = isNameValid && isEmailValid && isPasswordValid;
+            saveBtn.disabled = !allValid;
+        });
+
+        async function loadUsers() {
+            const token = localStorage.getItem('jwt_token');
+            if (!token) { window.location.href = '/Account/Login'; return; }
+
+            try {
+                const response = await fetch('/api/users', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401) { logout(); return; }
+
+                users = await response.json();
+                renderUsers(users);
+            } catch (err) { console.error(err); }
+        }
+
+        function renderUsers(data) {
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = data.map(user => `
+                <tr class="animate-fade-in">
+                    <td class="ps-4 small text-muted">#${user.id}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-3 small fw-bold">
+                                ${user.name ? user.name.charAt(0).toUpperCase() : '?'}
+                            </div>
+                            <span class="fw-semibold">${user.name}</span>
+                        </div>
+                    </td>
+                    <td><span class="text-muted">${user.email}</span></td>
+                    <td class="pe-4 text-end">
+                        <button class="btn btn-sm btn-light border-0 me-1" onclick="openEditModal(${user.id})" title="Edit User">
+                            <i class="bi bi-pencil-square text-primary"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light border-0" onclick="promptDelete(${user.id})" title="Delete User">
+                            <i class="bi bi-trash3 text-danger"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterUsers() {
+            const query = document.getElementById('userSearch').value.toLowerCase();
+            const filtered = users.filter(u => 
+                (u.name && u.name.toLowerCase().includes(query)) || 
+                (u.email && u.email.toLowerCase().includes(query))
+            );
+            renderUsers(filtered);
+        }
+
+        function openAddModal() {
+            console.log("Opening Add Modal...");
+            const modal = getModal();
+            if (!modal) return;
+
+            document.getElementById('userModalLabel').innerText = 'Add New User';
+            document.getElementById('userId').value = '';
+            document.getElementById('modalError').classList.add('d-none');
+            
+            if (userForm) {
+                userForm.reset();
+                userForm.querySelectorAll('.form-control').forEach(el => {
+                    el.classList.remove('is-invalid', 'is-valid');
+                });
+            }
+            
+            saveBtn.disabled = true;
+            modal.show();
+        }
+
+        function openEditModal(id) {
+            console.log("Opening Edit Modal for ID:", id);
+            const user = users.find(u => u.id === id);
+            if (!user) {
+                console.error("User not found for edit ID:", id);
+                return;
+            }
+
+            const modal = getModal();
+            if (!modal) return;
+
+            document.getElementById('userModalLabel').innerText = 'Update User';
+            document.getElementById('userId').value = user.id;
+            document.getElementById('userName').value = user.name;
+            document.getElementById('userEmail').value = user.email;
+            document.getElementById('userPassword').value = user.password;
+            document.getElementById('modalError').classList.add('d-none');
+            
+            // Clear validation classes first
+            if (userForm) {
+                userForm.querySelectorAll('.form-control').forEach(el => {
+                    el.classList.remove('is-invalid', 'is-valid');
+                });
+                // Trigger validation after setting values
+                setTimeout(() => {
+                    userForm.dispatchEvent(new Event('input'));
+                }, 100);
+            }
+            
+            modal.show();
+        }
+
+        async function saveUser() {
+            const id = document.getElementById('userId').value;
+            const name = document.getElementById('userName');
+            const email = document.getElementById('userEmail');
+            const password = document.getElementById('userPassword');
+            const errorDiv = document.getElementById('modalError');
+
+            errorDiv.classList.add('d-none');
+            
+            // Collect errors for summary (same validation as Register page)
+            let errors = [];
+            if (!name.value || name.value.length < 3) {
+                errors.push("Full Name is required (min 3 chars).");
+                name.classList.add('is-invalid');
+            }
+            if (!email.value) {
+                errors.push("Email is required.");
+                email.classList.add('is-invalid');
+            } else if (!isValidEmail(email.value)) {
+                errors.push("Please enter a valid email address.");
+                email.classList.add('is-invalid');
+            }
+            if (!password.value) {
+                errors.push("Password is required.");
+                password.classList.add('is-invalid');
+            } else if (!isValidPassword(password.value)) {
+                errors.push("Password must be at least 6 characters long.");
+                password.classList.add('is-invalid');
+            }
+
+            if (errors.length > 0) {
+                errorDiv.innerHTML = `<ul class="mb-0 ps-3">${errors.map(err => `<li>${err}</li>`).join('')}</ul>`;
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+
+            const userData = {
+                name: name.value,
+                email: email.value,
+                password: password.value
+            };
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? ('/api/users/' + id) : '/api/users';
+
+            const btnText = document.getElementById('saveBtnText');
+            const btnSpinner = document.getElementById('saveBtnSpinner');
+
+            btnText.classList.add('d-none');
+            btnSpinner.classList.remove('d-none');
+            saveBtn.disabled = true;
+
+            try {
+                const token = localStorage.getItem('jwt_token');
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'Authorization': 'Bearer ' + token 
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                if (response.status === 401) { logout(); return; }
+
+                if (response.ok) { 
+                    const modal = getModal();
+                    if (modal) modal.hide(); 
+                    loadUsers(); 
+                } else {
+                    const errorData = await response.json();
+                    errorDiv.innerText = errorData.message || "Operation failed.";
+                    errorDiv.classList.remove('d-none');
+                }
+            } catch (error) { 
+                errorDiv.innerText = "Network error. Please try again.";
+                errorDiv.classList.remove('d-none');
+            } finally {
+                btnText.classList.remove('d-none');
+                btnSpinner.classList.add('d-none');
+                saveBtn.disabled = false;
+            }
+        }
+
+        let deleteUserId = null;
+        let _deleteModalInstance = null;
+
+        function promptDelete(id) {
+            deleteUserId = id;
+            if (!_deleteModalInstance) {
+                const modalEl = document.getElementById('deleteModal');
+                if (modalEl) _deleteModalInstance = new bootstrap.Modal(modalEl);
+            }
+            if (_deleteModalInstance) _deleteModalInstance.show();
+        }
+
+        async function executeDelete() {
+            if (!deleteUserId) return;
+
+            const btnText = document.getElementById('deleteBtnText');
+            const btnSpinner = document.getElementById('deleteBtnSpinner');
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+
+            btnText.classList.add('d-none');
+            btnSpinner.classList.remove('d-none');
+            confirmBtn.disabled = true;
+
+            try {
+                const token = localStorage.getItem('jwt_token');
+                const response = await fetch(`/api/users/${deleteUserId}`, { 
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401) { logout(); return; }
+
+                if (response.ok) {
+                    if (_deleteModalInstance) _deleteModalInstance.hide();
+                    loadUsers();
+                } else {
+                    alert("Delete failed. You may not have permission.");
+                }
+            } catch (error) { 
+                console.error(error); 
+                alert("Network error during delete."); 
+            } finally {
+                btnText.classList.remove('d-none');
+                btnSpinner.classList.add('d-none');
+                confirmBtn.disabled = false;
+                deleteUserId = null;
+            }
+        }
+    </script>
+}

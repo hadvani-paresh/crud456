@@ -1,0 +1,92 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    var userName = User.Identity.Name;
+    var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+}
+
+<div class="row mb-5 animate-fade-in">
+    <div class="col-12">
+        <div class="card premium-card border-0 overflow-hidden">
+            <div class="card-body p-5 d-flex align-items-center justify-content-between position-relative z-1">
+                <div>
+                    <h1 class="display-5 fw-bold mb-2">Welcome <span class="text-primary">@userName</span>!</h1>
+                    <p class="fs-5 text-muted mb-0"><i class="bi bi-envelope-at me-2"></i>Email: @userEmail</p>
+                </div>
+                <div class="d-none d-md-block">
+                    <i class="bi bi-person-circle display-1 text-primary opacity-25"></i>
+                </div>
+            </div>
+            <!-- Decorative background elements -->
+            <div class="position-absolute bg-primary opacity-10 rounded-circle" style="width: 300px; height: 300px; top: -100px; right: -50px; filter: blur(50px);"></div>
+            <div class="position-absolute bg-info opacity-10 rounded-circle" style="width: 200px; height: 200px; bottom: -50px; left: -50px; filter: blur(50px);"></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 animate-fade-in" style="animation-delay: 0.1s;">
+    <!-- Weather Widget -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-lg h-100 card-weather text-white overflow-hidden transform-hover">
+            <div class="card-body p-4 position-relative z-1">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-2">Weather</span>
+                    <i class="bi bi-cloud-sun fs-1"></i>
+                </div>
+                <div class="mt-4">
+                    <h2 class="display-3 fw-bold mb-0">72&deg;</h2>
+                    <p class="h5 opacity-75 mb-0">New York, USA</p>
+                    <p class="small opacity-50 mt-2">Partly Cloudy</p>
+                </div>
+            </div>
+            <div class="position-absolute bg-white opacity-10 rounded-circle" style="width: 200px; height: 200px; top: -60px; right: -60px;"></div>
+        </div>
+    </div>
+
+    <!-- Currency Widget -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-lg h-100 card-currency text-white overflow-hidden transform-hover">
+            <div class="card-body p-4 position-relative z-1">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-2">Currency</span>
+                    <i class="bi bi-currency-exchange fs-1"></i>
+                </div>
+                <div class="mt-4">
+                    <h2 class="display-4 fw-bold mb-0">0.92 <small class="fs-4">EUR</small></h2>
+                    <p class="h5 opacity-75 mb-0">1 USD Base</p>
+                    <p class="small opacity-50 mt-2">Live Exchange Rate</p>
+                </div>
+            </div>
+            <div class="position-absolute bg-white opacity-10 rounded-circle" style="width: 200px; height: 200px; bottom: -60px; left: -60px;"></div>
+        </div>
+    </div>
+
+    <!-- Time Widget -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-lg h-100 card-time text-white overflow-hidden transform-hover">
+            <div class="card-body p-4 position-relative z-1">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-2">Local Time</span>
+                    <i class="bi bi-clock-history fs-1"></i>
+                </div>
+                <div class="mt-4">
+                    <h2 class="display-4 fw-bold mb-0" id="currentTime">--:--</h2>
+                    <p class="h5 opacity-75 mb-0" id="currentDate">-- -- --</p>
+                    <p class="small opacity-50 mt-2">Real-time Update</p>
+                </div>
+            </div>
+            <div class="position-absolute bg-white opacity-10 rounded-circle" style="width: 150px; height: 150px; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('currentDate').innerText = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+    </script>
+}
