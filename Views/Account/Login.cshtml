@@ -109,7 +109,7 @@
                     const data = await response.json();
                     localStorage.setItem('jwt_token', data.token);
                     localStorage.setItem('user_info', JSON.stringify(data.user));
-                    window.location.href = '/';
+                    window.location.href = '/Dashboard';
                 } else {
                     const errorData = await response.json();
                     errorDiv.innerText = errorData.message || "Invalid credentials";

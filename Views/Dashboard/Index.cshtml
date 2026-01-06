@@ -4,6 +4,12 @@
     var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
 }
 
+<!-- Success Message -->
+<div id="successMessage" class="alert alert-success border-0 shadow-sm mb-4 animate-fade-in align-items-center d-flex">
+    <h4 class="alert-heading fw-bold mb-0 me-2">🎉</h4>
+    <h5 class="mb-0 fw-bold">Dashboard Loaded Successfully!</h5>
+</div>
+
 <div class="row mb-5 animate-fade-in">
     <div class="col-12">
         <div class="card premium-card border-0 overflow-hidden">
@@ -26,67 +32,123 @@
 <div class="row g-4 animate-fade-in" style="animation-delay: 0.1s;">
     <!-- Weather Widget -->
     <div class="col-md-4">
-        <div class="card border-0 shadow-lg h-100 card-weather text-white overflow-hidden transform-hover">
-            <div class="card-body p-4 position-relative z-1">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-2">Weather</span>
-                    <i class="bi bi-cloud-sun fs-1"></i>
+        <a href="/Dashboard/Weather" class="text-decoration-none">
+            <div class="card border-0 shadow-lg h-100 card-weather text-white overflow-hidden transform-hover">
+                <div class="card-body p-4 position-relative z-1 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-bold mb-0">Weather</h4>
+                        <i class="bi bi-cloud-sun fs-1"></i>
+                    </div>
+                    <div class="mt-auto">
+                        <p class="h3 opacity-75 mb-0" id="dashWeatherTemp">Loading...</p>
+                        <p class="small opacity-50" id="dashWeatherCity">Global Forecast</p>
+                    </div>
                 </div>
-                <div class="mt-4">
-                    <h2 class="display-3 fw-bold mb-0">72&deg;</h2>
-                    <p class="h5 opacity-75 mb-0">New York, USA</p>
-                    <p class="small opacity-50 mt-2">Partly Cloudy</p>
-                </div>
+                <div class="position-absolute bg-white opacity-10 rounded-circle" style="width: 200px; height: 200px; top: -60px; right: -60px;"></div>
             </div>
-            <div class="position-absolute bg-white opacity-10 rounded-circle" style="width: 200px; height: 200px; top: -60px; right: -60px;"></div>
-        </div>
+        </a>
     </div>
 
     <!-- Currency Widget -->
     <div class="col-md-4">
-        <div class="card border-0 shadow-lg h-100 card-currency text-white overflow-hidden transform-hover">
-            <div class="card-body p-4 position-relative z-1">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-2">Currency</span>
-                    <i class="bi bi-currency-exchange fs-1"></i>
+        <a href="/Dashboard/Currency" class="text-decoration-none">
+            <div class="card border-0 shadow-lg h-100 card-currency text-white overflow-hidden transform-hover">
+                <div class="card-body p-4 position-relative z-1 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-bold mb-0">Currency</h4>
+                        <i class="bi bi-currency-exchange fs-1"></i>
+                    </div>
+                    <div class="mt-auto">
+                         <p class="h3 opacity-75 mb-0" id="dashCurrencyRate">Loading...</p>
+                         <p class="small opacity-50">USD to EUR</p>
+                    </div>
                 </div>
-                <div class="mt-4">
-                    <h2 class="display-4 fw-bold mb-0">0.92 <small class="fs-4">EUR</small></h2>
-                    <p class="h5 opacity-75 mb-0">1 USD Base</p>
-                    <p class="small opacity-50 mt-2">Live Exchange Rate</p>
-                </div>
+                <div class="position-absolute bg-white opacity-10 rounded-circle" style="width: 200px; height: 200px; bottom: -60px; left: -60px;"></div>
             </div>
-            <div class="position-absolute bg-white opacity-10 rounded-circle" style="width: 200px; height: 200px; bottom: -60px; left: -60px;"></div>
-        </div>
+        </a>
     </div>
 
     <!-- Time Widget -->
     <div class="col-md-4">
-        <div class="card border-0 shadow-lg h-100 card-time text-white overflow-hidden transform-hover">
-            <div class="card-body p-4 position-relative z-1">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-2">Local Time</span>
-                    <i class="bi bi-clock-history fs-1"></i>
+        <a href="/Dashboard/Time" class="text-decoration-none">
+            <div class="card border-0 shadow-lg h-100 card-time text-white overflow-hidden transform-hover">
+                <div class="card-body p-4 position-relative z-1 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-bold mb-0">Time</h4>
+                        <i class="bi bi-clock-history fs-1"></i>
+                    </div>
+                    <div class="mt-auto">
+                        <p class="h3 opacity-75 mb-0" id="currentTime">--:--</p>
+                        <p class="small opacity-50">World Clock</p>
+                    </div>
                 </div>
-                <div class="mt-4">
-                    <h2 class="display-4 fw-bold mb-0" id="currentTime">--:--</h2>
-                    <p class="h5 opacity-75 mb-0" id="currentDate">-- -- --</p>
-                    <p class="small opacity-50 mt-2">Real-time Update</p>
-                </div>
+                <div class="position-absolute bg-white opacity-10 rounded-circle" style="width: 150px; height: 150px; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
             </div>
-            <div class="position-absolute bg-white opacity-10 rounded-circle" style="width: 150px; height: 150px; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
-        </div>
+        </a>
     </div>
 </div>
 
 @section Scripts {
     <script>
+        // Auto-hide success message after 3 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const msg = document.getElementById('successMessage');
+                if (msg) {
+                    msg.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    msg.style.opacity = '0';
+                    msg.style.transform = 'translateY(-20px)';
+                    setTimeout(() => msg.remove(), 500); // Remove from DOM after fade out
+                }
+            }, 3000);
+
+            // Initialize Widgets
+            updateTime();
+            fetchDashboardWeather();
+            fetchDashboardCurrency();
+        });
+
+        // Time Widget Logic
         function updateTime() {
             const now = new Date();
-            document.getElementById('currentTime').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            document.getElementById('currentDate').innerText = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+            const timeElement = document.getElementById('currentTime');
+            // Check if element exists to prevent errors
+            if(timeElement) {
+                timeElement.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
         }
         setInterval(updateTime, 1000);
-        updateTime();
+
+        // Weather Widget Logic (New York Default)
+        async function fetchDashboardWeather() {
+            try {
+                // New York Coordinates: 40.71, -74.01
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&current=temperature_2m&wind_speed_unit=kmh');
+                const data = await res.json();
+                
+                if (data.current) {
+                    document.getElementById('dashWeatherTemp').innerHTML = `${Math.round(data.current.temperature_2m)}&deg;C`;
+                    document.getElementById('dashWeatherCity').innerText = "New York, USA";
+                }
+            } catch (err) {
+                console.error("Dashboard Weather Error:", err);
+                document.getElementById('dashWeatherTemp').innerText = "--";
+            }
+        }
+
+        // Currency Widget Logic (USD to EUR)
+        async function fetchDashboardCurrency() {
+            try {
+                const res = await fetch('https://api.frankfurter.app/latest?amount=1&from=USD&to=EUR');
+                const data = await res.json();
+                
+                if (data.rates && data.rates.EUR) {
+                    document.getElementById('dashCurrencyRate').innerText = `1 USD = ${data.rates.EUR} EUR`;
+                }
+            } catch (err) {
+                console.error("Dashboard Currency Error:", err);
+                document.getElementById('dashCurrencyRate').innerText = "--";
+            }
+        }
     </script>
 }

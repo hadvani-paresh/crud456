@@ -1,0 +1,183 @@
+@{
+    ViewData["Title"] = "Weather";
+}
+
+<div class="container animate-fade-in">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card premium-card border-0 shadow-lg overflow-hidden">
+                <div class="card-body p-5">
+                    <h2 class="fw-bold mb-4 text-center">Global Weather</h2>
+                    
+                    <div class="input-group mb-4">
+                        <input type="text" id="cityInput" list="countryList" class="form-control form-control-premium form-control-lg" placeholder="Enter city or select country...">
+                        <datalist id="countryList">
+                            <!-- Populated by JS -->
+                        </datalist>
+                        <button class="btn btn-premium px-4" onclick="getWeather()">
+                            <i class="bi bi-search me-2"></i>Search
+                        </button>
+                    </div>
+
+                    <div id="weatherResult" class="d-none text-center">
+                        <div class="d-flex justify-content-center align-items-center mb-3">
+                            <i id="weatherIcon" class="bi bi-cloud-sun display-1 text-primary me-3"></i>
+                            <div class="text-start">
+                                <h1 class="display-3 fw-bold mb-0" id="temperature">--&deg;C</h1>
+                                <p class="h4 text-muted mb-0" id="cityName">--</p>
+                            </div>
+                        </div>
+                        <div class="row mt-5 g-3">
+                            <div class="col-4">
+                                <div class="p-3 bg-light rounded-4">
+                                    <i class="bi bi-wind fs-3 text-secondary mb-2"></i>
+                                    <p class="small text-muted mb-0">Wind Speed</p>
+                                    <h5 class="fw-bold mb-0" id="windSpeed">-- km/h</h5>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-3 bg-light rounded-4">
+                                    <i class="bi bi-droplet fs-3 text-info mb-2"></i>
+                                    <p class="small text-muted mb-0">Humidity</p>
+                                    <h5 class="fw-bold mb-0" id="humidity">--%</h5>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-3 bg-light rounded-4">
+                                    <i class="bi bi-compass fs-3 text-warning mb-2"></i>
+                                    <p class="small text-muted mb-0">Direction</p>
+                                    <h5 class="fw-bold mb-0" id="windDir">--&deg;</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="loading" class="d-none text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+
+                    <div id="error" class="d-none alert alert-danger mt-3 border-0 rounded-3">
+                        <i class="bi bi-exclamation-circle me-2"></i> <span id="errorMsg"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-4">
+                <a href="/Dashboard" class="btn btn-light-premium rounded-pill px-4">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function getWeather() {
+            const city = document.getElementById('cityInput').value;
+            if (!city) return;
+
+            showLoading(true);
+            hideError();
+            document.getElementById('weatherResult').classList.add('d-none');
+
+            try {
+                // 1. Geocoding
+                const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1&language=en&format=json`);
+                const geoData = await geoRes.json();
+
+                if (!geoData.results || geoData.results.length === 0) {
+                    showError("City not found.");
+                    showLoading(false);
+                    return;
+                }
+
+                const { latitude, longitude, name, country } = geoData.results[0];
+
+                // 2. Weather
+                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m&wind_speed_unit=kmh`);
+                const weatherData = await weatherRes.json();
+
+                // Update UI
+                document.getElementById('cityName').innerText = `${name}, ${country}`;
+                document.getElementById('temperature').innerHTML = `${Math.round(weatherData.current.temperature_2m)}&deg;C`;
+                document.getElementById('windSpeed').innerText = `${weatherData.current.wind_speed_10m} km/h`;
+                document.getElementById('humidity').innerText = `${weatherData.current.relative_humidity_2m}%`;
+                document.getElementById('windDir').innerText = `${weatherData.current.wind_direction_10m}\u00B0`; // degree symbol
+
+                // Update Icon based on temp (Simple logic for demo)
+                const temp = weatherData.current.temperature_2m;
+                const icon = document.getElementById('weatherIcon');
+                icon.className = 'bi display-1 text-primary me-3';
+                if (temp > 25) icon.classList.add('bi-sun');
+                else if (temp > 15) icon.classList.add('bi-cloud-sun');
+                else if (temp > 5) icon.classList.add('bi-cloud');
+                else icon.classList.add('bi-snow');
+
+                document.getElementById('weatherResult').classList.remove('d-none');
+            } catch (err) {
+                showError("Failed to fetch weather data.");
+                console.error(err);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showLoading(show) {
+            const el = document.getElementById('loading');
+            if (show) el.classList.remove('d-none');
+            else el.classList.add('d-none');
+        }
+
+        function hideError() {
+            document.getElementById('error').classList.add('d-none');
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error');
+            document.getElementById('errorMsg').innerText = msg;
+            el.classList.remove('d-none');
+        }
+
+        // Populate Country List
+        const countries = [
+            "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
+            "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi",
+            "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic",
+            "Denmark", "Djibouti", "Dominica", "Dominican Republic",
+            "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia",
+            "Fiji", "Finland", "France",
+            "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana",
+            "Haiti", "Honduras", "Hungary",
+            "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy",
+            "Jamaica", "Japan", "Jordan",
+            "Kazakhstan", "Kenya", "Kiribati", "Korea, North", "Korea, South", "Kosovo", "Kuwait", "Kyrgyzstan",
+            "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg",
+            "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar",
+            "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Macedonia", "Norway",
+            "Oman",
+            "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal",
+            "Qatar",
+            "Romania", "Russia", "Rwanda",
+            "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria",
+            "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu",
+            "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan",
+            "Vanuatu", "Vatican City", "Venezuela", "Vietnam",
+            "Yemen", "Zambia", "Zimbabwe"
+        ];
+
+        const datalist = document.getElementById('countryList');
+        countries.forEach(country => {
+            const option = document.createElement('option');
+            option.value = country;
+            datalist.appendChild(option);
+        });
+
+
+        // Allow Enter key to search
+        document.getElementById('cityInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') getWeather();
+        });
+    </script>
+}

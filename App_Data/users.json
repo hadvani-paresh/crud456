@@ -24,5 +24,18 @@
     "IsEmailVerified": true,
     "PasswordResetToken": null,
     "PasswordResetExpiry": null
+  },
+  {
+    "Id": 3,
+    "Name": "pareshhadvani2",
+    "Email": "pareshhadvani2@gmail.com",
+    "Password": "Paresh@123",
+    "Role": "User",
+    "CreatedBy": 0,
+    "OTP": null,
+    "OTPExpiry": null,
+    "IsEmailVerified": true,
+    "PasswordResetToken": null,
+    "PasswordResetExpiry": null
   }
 ]

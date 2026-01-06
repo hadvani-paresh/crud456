@@ -10,5 +10,20 @@ namespace CrudProject.Controllers
         {
             return View();
         }
+
+        public IActionResult Weather()
+        {
+            return View();
+        }
+
+        public IActionResult Currency()
+        {
+            return View();
+        }
+
+        public IActionResult Time()
+        {
+            return View();
+        }
     }
 }

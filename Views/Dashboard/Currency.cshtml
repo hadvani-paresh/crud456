@@ -1,0 +1,131 @@
+@{
+    ViewData["Title"] = "Currency Converter";
+}
+
+<div class="container animate-fade-in">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card premium-card border-0 shadow-lg overflow-hidden">
+                <div class="card-body p-5">
+                    <h2 class="fw-bold mb-4 text-center">Currency Converter</h2>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small fw-bold">Amount</label>
+                            <input type="number" id="amount" class="form-control form-control-premium" value="1" min="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small fw-bold">From</label>
+                            <select id="fromCurrency" class="form-select form-control-premium">
+                                <option value="USD" selected>USD (US Dollar)</option>
+                                <option value="EUR">EUR (Euro)</option>
+                                <option value="GBP">GBP (British Pound)</option>
+                                <option value="JPY">JPY (Japanese Yen)</option>
+                                <option value="INR">INR (Indian Rupee)</option>
+                                <option value="AUD">AUD (Australian Dollar)</option>
+                                <option value="CAD">CAD (Canadian Dollar)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small fw-bold">To</label>
+                             <select id="toCurrency" class="form-select form-control-premium">
+                                <option value="EUR" selected>EUR (Euro)</option>
+                                <option value="USD">USD (US Dollar)</option>
+                                <option value="GBP">GBP (British Pound)</option>
+                                <option value="JPY">JPY (Japanese Yen)</option>
+                                <option value="INR">INR (Indian Rupee)</option>
+                                <option value="AUD">AUD (Australian Dollar)</option>
+                                <option value="CAD">CAD (Canadian Dollar)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button class="btn btn-premium px-5 py-2" onclick="convertCurrency()">
+                            <i class="bi bi-arrow-repeat me-2"></i>Convert
+                        </button>
+                    </div>
+
+                    <div id="resultContainer" class="d-none text-center mt-5 p-4 bg-white bg-opacity-50 rounded-4 shadow-sm">
+                        <p class="text-muted mb-1">Exchange Rate</p>
+                        <h1 class="display-4 fw-bold text-primary mb-0" id="resultValue">--</h1>
+                        <p class="small text-muted mt-2" id="rateInfo">--</p>
+                    </div>
+
+                    <div id="loading" class="d-none text-center py-5">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+
+                     <div id="error" class="d-none alert alert-danger mt-3 border-0 rounded-3">
+                        <i class="bi bi-exclamation-circle me-2"></i> <span id="errorMsg"></span>
+                    </div>
+
+                </div>
+            </div>
+             <div class="text-center mt-4">
+                <a href="/Dashboard" class="btn btn-light-premium rounded-pill px-4">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function convertCurrency() {
+            const amount = document.getElementById('amount').value;
+            const from = document.getElementById('fromCurrency').value;
+            const to = document.getElementById('toCurrency').value;
+
+            if (from === to) {
+                 showError("Please select different currencies.");
+                 return;
+            }
+
+            showLoading(true);
+            hideError();
+            document.getElementById('resultContainer').classList.add('d-none');
+
+            try {
+                const res = await fetch(`https://api.frankfurter.app/latest?amount=${amount}&from=${from}&to=${to}`);
+                const data = await res.json();
+
+                if (!data || !data.rates || !data.rates[to]) {
+                    showError("Conversion failed. Try again later.");
+                    return;
+                }
+
+                const result = data.rates[to];
+                document.getElementById('resultValue').innerText = `${result} ${to}`;
+                document.getElementById('rateInfo').innerText = `1 ${from} = ${(result / amount).toFixed(4)} ${to}`;
+                
+                document.getElementById('resultContainer').classList.remove('d-none');
+
+            } catch (err) {
+                showError("Network error. Could not fetch rates.");
+                console.error(err);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showLoading(show) {
+             const el = document.getElementById('loading');
+            if (show) el.classList.remove('d-none');
+            else el.classList.add('d-none');
+        }
+
+        function hideError() {
+            document.getElementById('error').classList.add('d-none');
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error');
+            document.getElementById('errorMsg').innerText = msg;
+            el.classList.remove('d-none');
+        }
+    </script>
+}

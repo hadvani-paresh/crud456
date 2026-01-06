@@ -30,39 +30,58 @@ namespace CrudProject.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            Console.WriteLine($"[LOGIN ATTEMPT] Email: {request.Email}");
-            
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            var users = GetUsers();
-            var user = users.FirstOrDefault(u => u.Email == request.Email && u.Password == request.Password && u.IsEmailVerified);
-
-            if (user == null)
+            try 
             {
-                Console.WriteLine($"[LOGIN FAILED] Invalid credentials for: {request.Email}");
-                return Unauthorized(new { message = "Invalid email or password, or email not verified" });
+                Console.WriteLine($"[LOGIN ATTEMPT] Email: {request.Email}");
+                
+                if (!ModelState.IsValid) return BadRequest(ModelState);
+
+                var users = GetUsers();
+                if (users == null) 
+                {
+                     Console.WriteLine("[ERROR] GetUsers returned null");
+                     return StatusCode(500, "User database could not be loaded.");
+                }
+
+                var user = users.FirstOrDefault(u => u.Email == request.Email && u.Password == request.Password && u.IsEmailVerified);
+
+                if (user == null)
+                {
+                    Console.WriteLine($"[LOGIN FAILED] Invalid credentials for: {request.Email}");
+                    // Check if user exists but not verified used to debug
+                    var existing = users.FirstOrDefault(u => u.Email == request.Email);
+                    if (existing != null && !existing.IsEmailVerified)
+                        return Unauthorized(new { message = "Email not verified." });
+
+                    return Unauthorized(new { message = "Invalid email or password." });
+                }
+
+                Console.WriteLine($"[LOGIN SUCCESS] User: {user.Email}, Role: {user.Role}");
+
+                var token = GenerateJwtToken(user);
+
+                // Also sign in to Cookie scheme for MVC page protection
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.Name, user.Name ?? user.Email), // Use name if available, fallback to email
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.Role, user.Role ?? "User")
+                };
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+                
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
+
+                Console.WriteLine($"[LOGIN COMPLETE] Token generated and cookie set for: {user.Email}");
+
+                return Ok(new { token, user = new { user.Id, user.Name, user.Email, user.Role } });
             }
-
-            Console.WriteLine($"[LOGIN SUCCESS] User: {user.Email}, Role: {user.Role}");
-
-            var token = GenerateJwtToken(user);
-
-            // Also sign in to Cookie scheme for MVC page protection
-            var claims = new List<Claim>
+            catch (Exception ex)
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Name ?? user.Email), // Use name if available, fallback to email
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role ?? "User")
-            };
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
-            
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
-
-            Console.WriteLine($"[LOGIN COMPLETE] Token generated and cookie set for: {user.Email}");
-
-            return Ok(new { token, user = new { user.Id, user.Name, user.Email, user.Role } });
+                Console.WriteLine($"[LOGIN EXCEPTION] {ex}");
+                return StatusCode(500, new { message = "An internal error occurred.", error = ex.Message, stack = ex.StackTrace });
+            }
         }
 
         [HttpPost("register")]
